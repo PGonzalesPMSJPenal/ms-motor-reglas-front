@@ -1,0 +1,291 @@
+<div class="constructor-container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Constructor de Reglas</mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <mat-tab-group [(selectedIndex)]="tabIndex">
+
+          <!-- Pestaña 1: Definición de Regla -->
+          <mat-tab label="Definición de Regla">
+            <form [formGroup]="reglaForm" class="regla-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Nombre de la Regla</mat-label>
+                  <input matInput formControlName="nombre" required>
+                  <mat-error *ngIf="reglaForm.get('nombre')?.invalid">El nombre es requerido</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Especialidad</mat-label>
+                  <mat-select formControlName="especialidad" required>
+                    <mat-option value="">Ninguno</mat-option>
+                    <mat-option *ngFor="let tipo of catalogos['especialidad']" [value]="tipo">
+                      {{tipo}}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="reglaForm.get('especialidad')?.invalid">
+                    La Especialidad es requerida
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field-full">
+                <mat-label>Describe el proposito y funcionamiento de esta regla ...</mat-label>
+                <textarea matInput formControlName="descripcion" required rows="2"></textarea>
+              </mat-form-field>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Prioridad</mat-label>
+                  <input matInput type="number" required formControlName="prioridad">
+                </mat-form-field>
+              </div>
+            </form>
+          </mat-tab>
+          
+          <!-- Pestaña 2: Condiciones (Cuando) -->
+          <mat-tab label="Condiciones">
+            <div class="condiciones-container">
+              <h3>Condiciones (Cuando)</h3>
+              <p class="subtitle">Define las condiciones que debe cumplirse para que esta regla se ejecute. Agrega condiciones más específicas para tu regla</p>
+              
+              <button mat-raised-button color="primary" (click)="agregarCondicion()">
+                <mat-icon>add_circle</mat-icon>
+                Agregar Condición
+              </button>
+              
+              <form [formGroup]="reglaForm"> <!-- Asegúrate de que el FormGroup esté presente -->
+                <div formArrayName="condicionesAdicionales">
+                  <mat-card *ngFor="let condicion of condicionesFormArray.controls; let i = index" 
+                            class="condicion-card" [formGroupName]="i">
+                    <div class="condicion-form">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Atributo</mat-label>
+                        <mat-select formControlName="atributo">
+                          <mat-option value="">Seleccionar</mat-option>
+                          <mat-option *ngFor="let attr of catalogos['atributos']" [value]="attr">
+                            {{attr}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                      
+                      <mat-form-field appearance="outline">
+                        <mat-label>Operador</mat-label>
+                        <mat-select formControlName="operador">
+                          <mat-option *ngFor="let op of operadores" [value]="op.simbolo">
+                            {{op.nombre}} ({{op.simbolo}})
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                      
+                      <mat-form-field appearance="outline" class="valor-field">
+                        <mat-label>Valor</mat-label>
+                        <input matInput formControlName="valor">
+                      </mat-form-field>
+                      
+                      <mat-slide-toggle formControlName="negacion" color="primary">
+                        NOT
+                      </mat-slide-toggle>
+                      
+                      <button mat-icon-button color="warn" (click)="eliminarCondicion(i)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </mat-card>
+                  
+                  <div *ngIf="condicionesFormArray.length === 0" class="no-condiciones">
+                    <p>No hay condiciones adicionales. Haz clic en "Agregar Condición" para añadir una.</p>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </mat-tab>
+
+          <!-- Pestaña 3: Acciones (Entonces) -->
+           <mat-tab label="Acciones (Entonces)">
+            <form [formGroup]="reglaForm" class="regla-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Bandeja Destino</mat-label>
+                  <mat-select formControlName="bandejaDestino" required>
+                    <mat-option value="">Ninguno</mat-option>
+                    <mat-option *ngFor="let bandeja of catalogos['bandejaDestino']" [value]="bandeja">
+                      {{bandeja}}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="reglaForm.get('bandejaDestino')?.invalid">
+                    La bandeja de destino es requerida
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Responsable</mat-label>
+                  <mat-select formControlName="responsable" required>
+                    <mat-option value="">Ninguno</mat-option>
+                    <mat-option *ngFor="let tipo of catalogos['responsable']" [value]="tipo">
+                      {{tipo}}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="reglaForm.get('responsable')?.invalid">
+                    El Responsable es requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </form>
+          </mat-tab>
+          
+          <!-- Pestaña 4: DRL Avanzado -->
+          <mat-tab label="DRL Avanzado">
+            <div class="drl-container">
+              <mat-slide-toggle formControlName="usarDrlPersonalizado" color="primary">
+                Usar DRL personalizado (modo avanzado)
+              </mat-slide-toggle>
+              
+              <div class="drl-actions">
+                <button mat-raised-button color="primary" 
+                        (click)="previsualizarDrl()" 
+                        [disabled]="reglaForm.get('usarDrlPersonalizado')?.value">
+                  Previsualizar DRL
+                </button>
+              </div>
+              <mat-form-field appearance="outline" class="drl-field">
+                <mat-label>Código DRL</mat-label>
+                <!-- Si usarDrlPersonalizado es true, editable -->
+                <textarea matInput 
+                          [value]="reglaForm.get('usarDrlPersonalizado')?.value ? 
+                                   reglaForm.get('drlPersonalizado')?.value : previewDrl"
+                          [readonly]="!reglaForm.get('usarDrlPersonalizado')?.value"
+                          (input)="reglaForm.get('usarDrlPersonalizado')?.value ? 
+                                   reglaForm.get('drlPersonalizado')?.setValue($event.target.value) : null"
+                          rows="16" 
+                          class="drl-textarea"></textarea>
+                <!-- Si está en modo personalizado -->
+              </mat-form-field>
+            </div>
+          </mat-tab>
+          
+          <!-- Pestaña 5: Simulación -->
+<mat-tab label="Simulación">
+  <div class="simulacion-container">
+    <h3>Simulación de Regla</h3>
+    <p class="subtitle">Define un expediente de prueba para simular la aplicación de la regla</p>
+
+    <mat-card class="expediente-test-card">
+      <mat-card-header>
+        <mat-card-title>Expedientes Registrados</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="expedienteTestForm" class="expediente-form">
+
+          <!-- Selector de expediente -->
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Expedientes</mat-label>
+              <mat-select formControlName="numeroExpediente" required (selectionChange)="onExpedienteSeleccionado($event.value)">
+                <mat-option value="">Ninguno</mat-option>
+                <mat-option *ngFor="let tipo of expedienteTestForm2" [value]="tipo">
+                  {{ tipo.numeroExpediente }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="expedienteTestForm.get('numeroExpediente')?.invalid">
+                El expediente es requerido
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Mostrar los campos del expediente solo si hay uno seleccionado -->
+            <div *ngIf="expedienteTestForm.get('numeroExpediente')?.value" class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Numero Expediente</mat-label>
+                <input matInput formControlName="numeroExpediente" readonly>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Tipo Resolucion</mat-label>
+                <input matInput formControlName="tipoResolucion" readonly>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field"><mat-label>Acto Procesal</mat-label>
+                <input matInput formControlName="actoProcesal" readonly>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Sumilla</mat-label>
+                <input matInput formControlName="sumilla" readonly>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Bandeja Origen</mat-label>
+                <input matInput formControlName="bandejaOrigen" readonly>
+              </mat-form-field>
+            </div>
+                    </form>
+                  </mat-card-content>
+                </mat-card>
+
+    <!-- Botón para ejecutar simulación -->
+    <div class="simulation-actions">
+      <button mat-raised-button color="primary" (click)="simularRegla()">
+        <mat-icon>play_arrow</mat-icon>
+        Ejecutar Simulación
+      </button>
+    </div>
+
+    <!-- Resultado de la simulación -->
+                  <mat-card *ngIf="resultadoSimulacion"
+                            [ngClass]="{
+                              'success-card': resultadoSimulacion.reglaAplicada,
+                              'warning-card': !resultadoSimulacion.reglaAplicada && !resultadoSimulacion.tieneErrores,
+                              'error-card': resultadoSimulacion.tieneErrores
+                            }">
+                    <mat-card-header>
+                      <mat-card-title>Resultado de la Simulación</mat-card-title>
+                    </mat-card-header>
+
+                    <mat-card-content>
+                      <p><strong>Estado:</strong>
+                        {{ resultadoSimulacion.reglaAplicada ? 'Regla aplicada' : 'Regla no aplicada' }}
+                      </p>
+
+                      <p *ngIf="resultadoSimulacion.bandejaResultante">
+                        <strong>Bandeja resultante:</strong> {{ resultadoSimulacion.bandejaResultante }}
+                      </p>
+
+                      <p><strong>Mensaje:</strong> {{ resultadoSimulacion.mensaje }}</p>
+
+                      <p *ngIf="resultadoSimulacion.errores" class="error-message">
+                        <strong>Errores:</strong> {{ resultadoSimulacion.errores }}
+                      </p>
+
+                      <mat-expansion-panel *ngIf="resultadoSimulacion.drlGenerado">
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>Ver DRL utilizado</mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <pre class="drl-code">{{ resultadoSimulacion.drlGenerado }}</pre>
+                      </mat-expansion-panel>
+                    </mat-card-content>
+                  </mat-card>
+
+                </div>
+              </mat-tab>
+
+
+        </mat-tab-group>
+      </mat-card-content>
+      
+      <mat-divider></mat-divider>
+      
+      <mat-card-actions align="end">
+        <button mat-button (click)="limpiarFormulario()">
+          Limpiar
+        </button>
+        <button mat-raised-button color="primary" (click)="guardarRegla()">
+          Guardar Regla
+        </button>
+      </mat-card-actions>
+      
+      <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
+    </mat-card>
+  </div>
