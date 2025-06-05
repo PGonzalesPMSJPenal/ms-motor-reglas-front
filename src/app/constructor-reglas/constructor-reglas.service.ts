@@ -7,7 +7,7 @@ import { BuilderRegla, Operador, SimulacionRegla, ResultadoSimulacion, Expedient
   providedIn: 'root'
 })
 export class ConstructorReglaService {
-  private baseUrl = 'http://localhost:8080/api/reglas';
+  private baseUrl = 'http://192.168.31.81:1705/api/reglas';
   constructor(private http: HttpClient) { }
 
   obtenerCatalogos(): Observable<{[key: string]: string[]}> {
